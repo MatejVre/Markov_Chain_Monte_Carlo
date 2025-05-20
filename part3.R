@@ -20,7 +20,7 @@ metropolis_hastings <- function(x, p, proposal_sampler, proposal_density, lower_
   #alpha <- min((p(x_new) * proposal_density(x_new, x, ...) / p(x) * proposal_density(x, x_new, ...)), 1) #Metropolis-Hastings update step
   #it all makes sense now, Metropolis-Hastings with a symmetric proposal is just a metropolis algorithm
   
-  log_alpha <- log(p(x_new)) + log(proposal_density(x_new, x, ...)) - log(p(x)) - log(proposal_density(x, x_new, ...))
+  log_alpha <- log(p(x_new)) + log(proposal_density(x, x_new, ...)) - log(p(x)) - log(proposal_density(x_new, x, ...))
   
   if (!is.finite(log_alpha)){
     alpha <- 0
@@ -82,7 +82,7 @@ mnorm_proposal_density <- function(x, x_condition, sigma){
 
 #M-H using multivariate normal distribution########################
 set.seed(42)
-sigma_matrix <- matrix(c(0.2, 0.11, 0.11, 0.18), ncol = 2)
+sigma_matrix <- matrix(c(1, 0, 0, 1), ncol = 2)
 chains = list()
 for (j in 1:5){
   m <- 1000
@@ -122,12 +122,22 @@ ess_for_all <- function(chains){
     cat("Alpha ess: ", ess(alphas), "|", "Eta ess: ", ess(etas), "\n")
   }
 }
+
+acceptance_rate_for_all <- function(chains){
+  for (ch in chains){
+    alphas <- ch$X
+    etas <- ch$Y
+    cat("Alpha rejection rate: ", sum(duplicated(alphas))/m, "|", "Eta rejection rate: ", sum(duplicated(etas)) / m, "\n")
+  }
+}
+
 plot_autocorrelation(chains)
 ess_for_all(chains)
+acceptance_rate_for_all(chains)
 
 
-alpha_seq <- seq(0.1, 3, length.out = 100)
-eta_seq <- seq(0.1, 3, length.out = 100)
+alpha_seq <- seq(0.1, 5, length.out = 100)
+eta_seq <- seq(0.1, 5, length.out = 100)
 
 # Compute posterior values over the grid
 posterior_grid <- outer(alpha_seq, eta_seq, Vectorize(function(a, e) posterior(c(a, e))))
