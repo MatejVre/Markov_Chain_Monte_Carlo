@@ -1,3 +1,5 @@
+library(mcmcse)
+
 # i will first mess around with markov chains to see if i understand it
 unif_proposal_sampling <- function(x, delta) {
   runif(1, x - delta, x + delta)
@@ -80,7 +82,7 @@ mnorm_proposal_density <- function(x, x_condition, sigma){
   dmvnorm(x, x_condition, sigma)
 }
 
-#M-H using multivariate normal distribution########################
+#M-H using multivariate normal distribution------------------------------------------------------------------
 set.seed(42)
 sigma_matrix <- matrix(c(1, 0, 0, 1), ncol = 2)
 chains = list()
@@ -116,11 +118,18 @@ plot_autocorrelation <- function(chains){
 }
 
 ess_for_all <- function(chains){
+  ess_alphas <- c()
+  ess_etas <- c()
   for (ch in chains){
     alphas <- ch$X
     etas <- ch$Y
-    cat("Alpha ess: ", ess(alphas), "|", "Eta ess: ", ess(etas), "\n")
+    ea <- ess(alphas)
+    ee <- ess(etas)
+    ess_alphas <- c(ess_alphas, ea)
+    ess_etas <- c(ess_etas, ee)
+    cat("Alpha ess: ", ea, "|", "Eta ess: ", ee, "\n")
   }
+  cat("Mean alpha ess: ", mean(ess_alphas), "|", "Mean eta ess: ", mean(ess_etas), "\n")
 }
 
 acceptance_rate_for_all <- function(chains){
@@ -131,9 +140,33 @@ acceptance_rate_for_all <- function(chains){
   }
 }
 
+chain_mean_and_variance <- function(chains){
+
+  for (ch in chains){
+    alphas <- ch$X
+    etas <- ch$Y
+    cat("Mean Alpha: ", mean(alphas), "+/-", mcse(alphas)$se^2, "|", "Mean Eta: ", mean(etas), "+/-", mcse(etas)$se^2, "\n")
+  }
+}
+
+chain_cdf <- function(x_alpha=1.3, x_eta=1.3, chains=chains){
+  for (ch in chains){
+    alphas <- ch$X
+    etas <- ch$Y
+    
+    p_alpha <- sum(alphas[alphas >= x_alpha]) / length(alphas)
+    p_eta <- sum(etas[etas >= x_eta]) / length(etas)
+    
+    cat("Probability: ", p_alpha * p_eta, "\n")
+  }
+}
+
+#Diagnostics and results------------------------------------------------------------------
 plot_autocorrelation(chains)
 ess_for_all(chains)
 acceptance_rate_for_all(chains)
+chain_mean_and_variance(chains)
+chain_cdf(chains=chains)
 
 
 alpha_seq <- seq(0.1, 5, length.out = 100)
@@ -189,5 +222,6 @@ for (j in 1:5){
 
 plot_autocorrelation(chains_other)
 ess_for_all(chains_other)
-
-
+acceptance_rate_for_all(chains_other)
+chain_mean_and_variance(chains_other)
+chain_cdf(chains=chains_other)
