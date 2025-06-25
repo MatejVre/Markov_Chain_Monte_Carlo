@@ -100,9 +100,10 @@ for (j in 1:5){
 
 #It would appear that setting this is extremely difficult, i have been searching the
 #sigma matrix parameter space for the better part of an hour. *angry_hello_kitty_emoji*
-plot_autocorrelation <- function(chains){
+plot_autocorrelation <- function(chains, filename){
   
-  windows(width = 40, height = 20)
+  #windows(width = 40, height = 20)
+  grDevices::pdf(filename, width = 16, height = 10)
   par(mfrow=c(5,4))
   
   for (i in 1:5){
@@ -115,6 +116,44 @@ plot_autocorrelation <- function(chains){
     acf(eta_samples, main = paste("Eta Chain", i, "- Autocorrelation"))
     plot(eta_samples, type="l", main = paste("Eta Chain", i, "- Traceplot"))
   }
+  
+  dev.off()
+}
+
+plot_autocorrelation2 <- function(chains, filename){
+  
+  #windows(width = 40, height = 20)
+  grDevices::pdf(filename, width = 16, height = 16)
+  par(mfrow=c(5,2), cex.main = 2.0, cex.lab = 1.7, cex.axis = 1.7)
+  
+  for (i in 1:5){
+    samples <- chains[[i]]
+    alpha_samples <- samples$X
+    eta_samples <- samples$Y
+    
+    acf(alpha_samples, main = paste("Alpha Chain", i, "- Autocorrelation"))
+    acf(eta_samples, main = paste("Eta Chain", i, "- Autocorrelation"))
+  }
+  
+  dev.off()
+}
+
+plot_trace <- function(chains, filename){
+  
+  #windows(width = 40, height = 20)
+  grDevices::pdf(filename, width = 16, height = 16)
+  par(mfrow=c(5,2), cex.main = 2.0, cex.lab = 1.7, cex.axis = 1.7)
+  
+  for (i in 1:5){
+    samples <- chains[[i]]
+    alpha_samples <- samples$X
+    eta_samples <- samples$Y
+    
+    plot(alpha_samples, type="l", main = paste("Alpha Chain", i, "- Traceplot"))
+    plot(eta_samples, type="l", main = paste("Eta Chain", i, "- Traceplot"))
+  }
+  
+  dev.off()
 }
 
 ess_for_all <- function(chains){
@@ -149,24 +188,50 @@ chain_mean_and_variance <- function(chains){
   }
 }
 
+joined_chain_mean_and_variance <-  function(chains){
+  alphas <- c()
+  etas <- c()
+  for (ch in chains){
+    alphas <- c(alphas, ch$X)
+    etas <- c(etas, ch$Y)
+  }
+  cat("Mean Alpha: ", mean(alphas), "+/-", var(alphas), "|", "Mean Eta: ", mean(etas), "+/-", var(etas), "\n")
+}
+
 chain_cdf <- function(x_alpha=1.3, x_eta=1.3, chains=chains){
   for (ch in chains){
     alphas <- ch$X
     etas <- ch$Y
     
-    p_alpha <- sum(alphas[alphas >= x_alpha]) / length(alphas)
-    p_eta <- sum(etas[etas >= x_eta]) / length(etas)
+    p_alpha <- length(alphas[alphas >= x_alpha]) / length(alphas)
+    p_eta <- length(etas[etas >= x_eta]) / length(etas)
     
     cat("Probability: ", p_alpha * p_eta, "\n")
   }
 }
 
+joined_chain_cdf <- function(x_alpha=1.3, x_eta=1.3, chains=chains){
+  alphas <- c()
+  etas <- c()
+  for (ch in chains){
+    alphas <- c(alphas, ch$X)
+    etas <- c(etas, ch$Y)
+    
+  }
+  p_alpha <- length(alphas[alphas >= x_alpha]) / length(alphas)
+  p_eta <- length(etas[etas >= x_eta]) / length(etas)
+  
+  cat("Probability: ", p_alpha * p_eta, "\n")
+}
 #Diagnostics and results------------------------------------------------------------------
-plot_autocorrelation(chains)
+plot_autocorrelation2(chains, "multi_autocorrelation.pdf")
+plot_trace(chains, "multi_trace.pdf")
 ess_for_all(chains)
 acceptance_rate_for_all(chains)
 chain_mean_and_variance(chains)
+joined_chain_mean_and_variance(chains)
 chain_cdf(chains=chains)
+joined_chain_cdf(chains=chains)
 
 
 alpha_seq <- seq(0.1, 5, length.out = 100)

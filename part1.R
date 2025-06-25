@@ -33,11 +33,31 @@ trapezoidal_rule_for_expected_value <- function(lower_bound, upper_bound, fun, N
   return((h / 2)*cum_sum)
 }
 
-#It takes 302 evaluations to get the value approximated to 4 decimal places
-trapezoidal_rule_for_expected_value(a, c, pert, 302)
+#It takes 271 evaluations to get the value approximated to 4 decimal places
+res <- trapezoidal_rule_for_expected_value(a, c, pert, 271)
+cat(sprintf("approx = %.8f", res))
+print(abs(res-Ex)<0.00005)
 
-n = 40000
+
+#trying the CLT
+n = 1e8
 xs = runif(n, a, c)
 prob = 1/c-a
 
-1/(n * prob) * sum(xs * pert(xs))
+f_samples <- xs * pert(xs) * (c - a)
+
+ex_est <- mean(f_samples)
+
+#ex2_est <- mean(f_samples * (c - a))
+
+sample_sd <- sd(f_samples)
+
+required_n <- ceiling((1.96 * sample_sd / 0.005)^2)
+
+#We require 55939373 samples to estimate E[X] to 2 decimal places 95% of the time.
+
+#Doing the numerical examples but might switch to Python if it'll be too slow.
+
+for(i in 1:200){
+  
+}
